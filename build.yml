@@ -1,0 +1,64 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: unzip -q VideoPlayer.zip -d project
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Build debug APK
+        working-directory: project
+        run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VideoPlayer-APK
+          path: project/app/build/outputs/apk/debug/app-debug.apk
+
+  autotest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built APK
+        uses: actions/download-artifact@v4
+        with:
+          name: VideoPlayer-APK
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run app self-test on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb install -r app-debug.apk
+            adb shell pm grant com.mylock.videoplayer android.permission.READ_MEDIA_VIDEO || true
+            adb logcat -c
+            adb shell am start -n com.mylock.videoplayer/.SelfTestActivity
+            for i in $(seq 1 40); do if adb logcat -d -s VPTEST | grep -q "SUMMARY:"; then break; fi; sleep 5; done
+            adb logcat -d -s VPTEST > selftest-report.txt
+            cat selftest-report.txt
+            grep -q "SUMMARY:" selftest-report.txt
+            ! grep -q ": FAIL " selftest-report.txt
+      - name: Upload self-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SelfTest-Report
+          path: selftest-report.txt
