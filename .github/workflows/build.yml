@@ -30,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp project/app/build/outputs/apk/debug/app-debug.apk VideoPlayer.apk
-          gh release create v1.4 VideoPlayer.apk --title "Video Player v1.4" --notes "Video Player APK (debug build, API 35) — direct download." || gh release upload v1.4 VideoPlayer.apk --clobber
+          gh release create v1.5 VideoPlayer.apk --title "Video Player v1.5" --notes "Video Player APK (debug build, API 35) — direct download." || gh release upload v1.5 VideoPlayer.apk --clobber
 
   autotest:
     needs: build
