@@ -30,4 +30,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp project/app/build/outputs/apk/debug/app-debug.apk VideoPlayer.apk
-          gh release create v3.0 VideoPlayer.apk --title "Video Player v3.0 - FINAL" --notes "Video Player FINAL APK (debug build, API 35) - direct download. Final icon (Moiz design), Auto Test feature removed." || gh release upload v3.0 VideoPlayer.apk --clobber
+          gh release create v3.1 VideoPlayer.apk --title "Video Player v3.1 - FINAL" --notes "Video Player FINAL APK (debug build, API 35) - direct download. Final: Moiz icon, Quicksand font, app pages (About/Help/Privacy/Licenses), Auto Test removed." || gh release upload v3.1 VideoPlayer.apk --clobber
